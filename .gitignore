@@ -1,0 +1,25 @@
+# Variáveis de ambiente (NUNCA commitar)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Credenciais Google (caso existam localmente)
+client_secret.json
+token.json
+oauth_client_secret.json
+oauth_token.json
+credentials.json
+
+# Dados locais
+data/
+output*.xlsx
+
+# IDE
+.vscode/
+.idea/

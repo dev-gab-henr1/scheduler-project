@@ -1,0 +1,11 @@
+APScheduler>=3.10
+python-dotenv>=1.0
+pandas>=2.2
+openpyxl>=3.1
+requests>=2.31
+google-api-python-client>=2.100
+google-auth>=2.30
+google-auth-oauthlib>=1.2
+
+# ── Dependências de outros scripts ──────────────────────────────────────────
+# beautifulsoup4>=4.12
