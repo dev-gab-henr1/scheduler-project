@@ -283,6 +283,8 @@ def download_txt_from_drive(drive_service, folder_id: str, dest_dir: str) -> int
                 q=query,
                 fields="files(id, name)",
                 pageSize=500,
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True,
             ).execute(),
             logger=logger,
             config=GOOGLE_RETRY_CONFIG,
@@ -307,7 +309,10 @@ def download_txt_from_drive(drive_service, folder_id: str, dest_dir: str) -> int
         try:
             content = execute_with_retry(
                 action_label=f"drive_get_media_txt_{file_name}",
-                func=lambda: drive_service.files().get_media(fileId=file_id).execute(),
+                func=lambda: drive_service.files().get_media(
+                    fileId=file_id,
+                    supportsAllDrives=True,
+                ).execute(),
                 logger=logger,
                 config=GOOGLE_RETRY_CONFIG,
                 retry_exceptions=(Exception,),
@@ -338,7 +343,12 @@ def download_file_from_drive(drive_service, folder_id: str, filename: str, dest_
     try:
         results = execute_with_retry(
             action_label=f"drive_find_file_{filename}",
-            func=lambda: drive_service.files().list(q=query, fields="files(id)").execute(),
+            func=lambda: drive_service.files().list(
+                q=query,
+                fields="files(id)",
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True,
+            ).execute(),
             logger=logger,
             config=GOOGLE_RETRY_CONFIG,
             retry_exceptions=(Exception,),
@@ -355,7 +365,10 @@ def download_file_from_drive(drive_service, folder_id: str, filename: str, dest_
     try:
         content = execute_with_retry(
             action_label=f"drive_download_file_{filename}",
-            func=lambda: drive_service.files().get_media(fileId=file_id).execute(),
+            func=lambda: drive_service.files().get_media(
+                fileId=file_id,
+                supportsAllDrives=True,
+            ).execute(),
             logger=logger,
             config=GOOGLE_RETRY_CONFIG,
             retry_exceptions=(Exception,),
@@ -386,7 +399,12 @@ def get_drive_folder_id_by_name(drive_service, parent_id: str, folder_name: str)
     )
     results = execute_with_retry(
         action_label=f"drive_find_folder_{folder_name}",
-        func=lambda: drive_service.files().list(q=query, fields="files(id, name)").execute(),
+        func=lambda: drive_service.files().list(
+            q=query,
+            fields="files(id, name)",
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True,
+        ).execute(),
         logger=logger,
         config=GOOGLE_RETRY_CONFIG,
         retry_exceptions=(Exception,),
@@ -460,7 +478,12 @@ def upload_to_drive(drive_service, filepath, filename, folder_id,
     try:
         results = execute_with_retry(
             action_label=f"drive_find_upload_target_{filename}",
-            func=lambda: drive_service.files().list(q=query, fields="files(id)").execute(),
+            func=lambda: drive_service.files().list(
+                q=query,
+                fields="files(id)",
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True,
+            ).execute(),
             logger=logger,
             config=GOOGLE_RETRY_CONFIG,
             retry_exceptions=(Exception,),
@@ -477,7 +500,11 @@ def upload_to_drive(drive_service, filepath, filename, folder_id,
         file_id = existing[0]["id"]
         execute_with_retry(
             action_label=f"drive_update_file_{filename}",
-            func=lambda: drive_service.files().update(fileId=file_id, media_body=media).execute(),
+            func=lambda: drive_service.files().update(
+                fileId=file_id,
+                media_body=media,
+                supportsAllDrives=True,
+            ).execute(),
             logger=logger,
             config=GOOGLE_RETRY_CONFIG,
             retry_exceptions=(Exception,),
@@ -487,7 +514,11 @@ def upload_to_drive(drive_service, filepath, filename, folder_id,
         file_metadata = {"name": filename, "parents": [folder_id]}
         execute_with_retry(
             action_label=f"drive_create_file_{filename}",
-            func=lambda: drive_service.files().create(body=file_metadata, media_body=media).execute(),
+            func=lambda: drive_service.files().create(
+                body=file_metadata,
+                media_body=media,
+                supportsAllDrives=True,
+            ).execute(),
             logger=logger,
             config=GOOGLE_RETRY_CONFIG,
             retry_exceptions=(Exception,),
