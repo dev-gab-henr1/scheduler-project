@@ -23,3 +23,6 @@ output*.xlsx
 # IDE
 .vscode/
 .idea/
+
+# Scripts locais de operacao manual
+scripts/set_ongoing_cooperados_sim.py

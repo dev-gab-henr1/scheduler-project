@@ -13,8 +13,10 @@ from dotenv import load_dotenv
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 
 from scripts.atualizacao_copel import tarefa_atualizacao_copel
+from scripts.reset_clickup_campo_mensal import tarefa_reset_clickup_campo_mensal
 from scripts.retry_utils import RetryConfig, backoff_seconds
 
 # Carrega variaveis de ambiente
@@ -32,6 +34,10 @@ logger = logging.getLogger("scheduler")
 # Curitiba utiliza o fuso IANA America/Sao_Paulo
 TIMEZONE = "America/Sao_Paulo"
 COPEL_TRIGGER = CronTrigger(hour=7, minute=0, timezone=TIMEZONE)
+MONTHLY_CLICKUP_RESET_TRIGGER = CronTrigger(day=1, hour=0, minute=0, timezone=TIMEZONE)
+MONTHLY_CLICKUP_RESET_TEST_INTERVAL_MINUTES = int(
+    os.getenv("MONTHLY_CLICKUP_RESET_TEST_INTERVAL_MINUTES", "0")
+)
 
 # Backoff de reinicio para proteger em caso de falhas repetidas.
 RESTART_BASE_SECONDS = float(os.getenv("SCHEDULER_RESTART_BASE_SECONDS", "5"))
@@ -146,6 +152,26 @@ def _build_scheduler() -> BlockingScheduler:
         name="Atualizacao Relatorios Copel",
         replace_existing=True,
     )
+
+    monthly_reset_trigger = MONTHLY_CLICKUP_RESET_TRIGGER
+    monthly_reset_name = "Reset mensal ClickUp campo Sim/Não"
+    if MONTHLY_CLICKUP_RESET_TEST_INTERVAL_MINUTES > 0:
+        monthly_reset_trigger = IntervalTrigger(
+            minutes=MONTHLY_CLICKUP_RESET_TEST_INTERVAL_MINUTES,
+            timezone=TIMEZONE,
+        )
+        monthly_reset_name = (
+            f"Reset ClickUp campo Sim/Não (TESTE a cada {MONTHLY_CLICKUP_RESET_TEST_INTERVAL_MINUTES} min)"
+        )
+
+    scheduler.add_job(
+        executar_tarefa,
+        trigger=monthly_reset_trigger,
+        args=[monthly_reset_name, tarefa_reset_clickup_campo_mensal],
+        id="reset_clickup_campo_mensal",
+        name=monthly_reset_name,
+        replace_existing=True,
+    )
     return scheduler
 
 
@@ -158,7 +184,17 @@ def main():
         try:
             scheduler = _build_scheduler()
             logger.info("Agendada: Atualizacao Relatorios Copel -> %s", COPEL_TRIGGER)
-            logger.info("Scheduler iniciado com 1 tarefa(s) | TZ: %s", TIMEZONE)
+            if MONTHLY_CLICKUP_RESET_TEST_INTERVAL_MINUTES > 0:
+                logger.warning(
+                    "Agendada: Reset ClickUp campo Sim/Não (MODO TESTE) -> intervalo=%s minuto(s)",
+                    MONTHLY_CLICKUP_RESET_TEST_INTERVAL_MINUTES,
+                )
+            else:
+                logger.info(
+                    "Agendada: Reset ClickUp campo Sim/Não -> %s",
+                    MONTHLY_CLICKUP_RESET_TRIGGER,
+                )
+            logger.info("Scheduler iniciado com 2 tarefa(s) | TZ: %s", TIMEZONE)
             scheduler.start()
 
             # Em condicoes normais o start() nao retorna.
